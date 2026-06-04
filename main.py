@@ -1,59 +1,208 @@
 #!/usr/bin/env python3
 """
-ShibaCuddles - Network Scanning Tool
-Usage: python main.py [network] [options]
-Example: python main.py 192.168.1.0/24 --ports 1-1024 --output results.json
+ShibaCuddles - Advanced Network Scanner
+A comprehensive, high-performance network scanning tool written in Python.
+Supports device discovery, port scanning, service detection, and vulnerability assessment.
 """
 
 import argparse
-import json
-from src import discover_devices, scan_ports
+import sys
+import logging
+from pathlib import Path
 
-def parse_args():
-    parser = argparse.ArgumentParser(description="Network scanner for ShibaCuddles")
-    parser.add_argument("network", help="Target network (CIDR notation)")
-    parser.add_argument("--ports", "-p", type=str, default="1-1024",
-                       help="Port range (default: 1-1024)")
-    parser.add_argument("--output", "-o", type=str,
-                       help="Output file (JSON format)")
-    parser.add_argument("--verbose", "-v", action="store_true",
-                       help="Verbose output")
+# Add src directory to path
+sys.path.insert(0, str(Path(__file__).parent))
+
+from src.scanner import NetworkScanner
+from src.utils import setup_logging, validate_network, print_banner
+
+def parse_arguments():
+    """Parse and validate command-line arguments."""
+    parser = argparse.ArgumentParser(
+        description="ShibaCuddles - Advanced Network Scanner",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Basic network scan
+  python main.py 192.168.1.0/24
+
+  # Scan with custom ports
+  python main.py 192.168.1.0/24 --ports 22,80,443,8080
+
+  # Aggressive scan with service detection
+  python main.py 192.168.1.0/24 --aggressive --service-detection
+
+  # Save results to file
+  python main.py 192.168.1.0/24 --output results.json --format json
+
+  # Parallel scanning with 20 threads
+  python main.py 192.168.1.0/24 --threads 20 --timeout 3
+        """
+    )
+    
+    # Required arguments
+    parser.add_argument("network", help="Target network in CIDR notation (e.g., 192.168.1.0/24)")
+    
+    # Scanning options
+    parser.add_argument(
+        "--ports", "-p",
+        type=str,
+        default="1-1024",
+        help="Ports to scan: range (1-1024) or list (22,80,443) [default: 1-1024]"
+    )
+    parser.add_argument(
+        "--threads", "-t",
+        type=int,
+        default=10,
+        help="Number of threads for parallel scanning [default: 10]"
+    )
+    parser.add_argument(
+        "--timeout",
+        type=float,
+        default=5.0,
+        help="Connection timeout in seconds [default: 5.0]"
+    )
+    parser.add_argument(
+        "--rate-limit",
+        type=float,
+        default=0.0,
+        help="Delay between scans in seconds (0 for no limit) [default: 0.0]"
+    )
+    
+    # Feature flags
+    parser.add_argument(
+        "--ping-sweep", "-ps",
+        action="store_true",
+        help="Enable ICMP ping sweep for device discovery"
+    )
+    parser.add_argument(
+        "--service-detection", "-sd",
+        action="store_true",
+        help="Enable service version detection"
+    )
+    parser.add_argument(
+        "--os-detection", "-os",
+        action="store_true",
+        help="Enable OS fingerprinting"
+    )
+    parser.add_argument(
+        "--aggressive", "-A",
+        action="store_true",
+        help="Enable aggressive scanning (service + OS detection)"
+    )
+    parser.add_argument(
+        "--no-ping",
+        action="store_true",
+        help="Skip ping sweep, scan all hosts"
+    )
+    
+    # Output options
+    parser.add_argument(
+        "--output", "-o",
+        type=str,
+        help="Output file path (auto-detects format from extension)"
+    )
+    parser.add_argument(
+        "--format", "-f",
+        choices=["json", "csv", "xml", "txt"],
+        default="json",
+        help="Output format [default: json]"
+    )
+    parser.add_argument(
+        "--verbose", "-v",
+        action="count",
+        default=0,
+        help="Verbose output (use -vv for extra verbosity)"
+    )
+    parser.add_argument(
+        "--quiet", "-q",
+        action="store_true",
+        help="Suppress all output except results"
+    )
+    
+    # Performance options
+    parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=50,
+        help="Batch size for processing results [default: 50]"
+    )
+    parser.add_argument(
+        "--skip-broadcast",
+        action="store_true",
+        help="Skip broadcast and network addresses"
+    )
+    
     return parser.parse_args()
 
-def format_ports(port_range):
-    """Convert port range string to list of integers."""
-    if "-" in port_range:
-        start, end = map(int, port_range.split("-"))
-        return list(range(start, end + 1))
-    return [int(p) for p in port_range.split(",")]
 
 def main():
-    args = parse_args()
-    ports = format_ports(args.ports)
+    """Main entry point."""
+    print_banner()
+    args = parse_arguments()
     
-    if args.verbose:
-        print(f"Scanning {args.network} for ports {args.ports}")
-        
-    devices = discover_devices(args.network)
-    results = []
+    # Setup logging
+    log_level = logging.WARNING
+    if args.quiet:
+        log_level = logging.ERROR
+    elif args.verbose == 1:
+        log_level = logging.INFO
+    elif args.verbose >= 2:
+        log_level = logging.DEBUG
     
-    for dev in devices:
-        open_ports = scan_ports(dev.ip, ports)
-        device_data = {
-            "ip": dev.ip,
-            "open_ports": sorted(open_ports)
-        }
-        results.append(device_data)
-        
-        if args.verbose:
-            print(f"Found {len(open_ports)} open ports on {dev.ip}")
+    logger = setup_logging(log_level)
     
-    if args.output:
-        with open(args.output, "w") as f:
-            json.dump(results, f, indent=2)
-        print(f"Results saved to {args.output}")
+    # Validate network input
+    if not validate_network(args.network):
+        logger.error(f"Invalid network: {args.network}")
+        sys.exit(1)
+    
+    # Create scanner instance
+    scanner = NetworkScanner(
+        network=args.network,
+        threads=args.threads,
+        timeout=args.timeout,
+        rate_limit=args.rate_limit,
+        batch_size=args.batch_size,
+        skip_broadcast=args.skip_broadcast,
+        logger=logger
+    )
+    
+    # Configure scanner features
+    if args.aggressive:
+        scanner.enable_service_detection = True
+        scanner.enable_os_detection = True
     else:
-        print(json.dumps(results, indent=2))
+        scanner.enable_service_detection = args.service_detection
+        scanner.enable_os_detection = args.os_detection
+    
+    scanner.ping_sweep = args.ping_sweep and not args.no_ping
+    
+    try:
+        # Run scan
+        logger.info(f"Starting scan on {args.network}")
+        results = scanner.scan(args.ports)
+        
+        # Display results
+        if not args.quiet:
+            scanner.print_results(results)
+        
+        # Save results if output file specified
+        if args.output:
+            scanner.save_results(results, args.output, args.format)
+            logger.info(f"Results saved to {args.output}")
+        
+        return 0
+        
+    except KeyboardInterrupt:
+        logger.warning("Scan interrupted by user")
+        return 130
+    except Exception as e:
+        logger.error(f"Scan failed: {e}")
+        if args.verbose >= 2:
+            logger.exception("Full traceback:")
+        return 1
+
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
