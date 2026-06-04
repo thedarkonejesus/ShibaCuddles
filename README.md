@@ -1,233 +1,316 @@
-# 🐕 ShibaCuddles - Network Scanner
+# ShibaCuddles - Advanced Network Scanner & Security Testing Suite
 
-> A lightweight, efficient network scanning tool written in Python. Discover active hosts and scan ports with ease.
+## 🎯 Quick Start
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python Version](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![Code Style](https://img.shields.io/badge/Code%20Style-PEP%208-brightgreen.svg)](https://pep8.org/)
+### CLI Mode
+```bash
+# Basic scan
+python main.py 192.168.1.0/24
 
----
+# Aggressive scan with service detection
+python main.py 192.168.1.0/24 --aggressive -vv
 
-## ✨ Features
+# Export results
+python main.py 192.168.1.0/24 --output results.json --format json
+```
 
-- 🔍 **ICMP-based Device Discovery** - Quickly identify active hosts on your network
-- 🔌 **TCP Port Scanning** - Scan ports 1-1024 by default, or customize your range
-- ⚙️ **Highly Configurable** - Adjust port ranges, timeouts, and scan parameters
-- 📊 **JSON Output Support** - Export results in structured JSON format
-- 🔊 **Verbose Logging** - Detailed output for debugging and monitoring
-- ✅ **Comprehensive Testing** - Includes unit tests for reliability
-- 🚀 **Performance Optimized** - Efficient scanning with minimal resource usage
+### GUI Mode
+```bash
+python gui_launcher.py
+```
 
----
-
-## 📋 Table of Contents
-
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Usage](#usage)
-- [Architecture](#architecture)
-- [Configuration](#configuration)
-- [Testing](#testing)
-- [Contributing](#contributing)
-- [License](#license)
-
----
-
-## 🚀 Installation
+## 📦 Installation
 
 ### Prerequisites
-
-- Python 3.8 or higher
-- pip (Python package manager)
+- Python 3.8+
+- pip
+- For WiFi features: aircrack-ng suite
 
 ### Setup
-
 ```bash
-# Clone the repository
+# Clone repository
 git clone https://github.com/thedarkonejesus/ShibaCuddles.git
 cd ShibaCuddles
 
 # Install dependencies
 pip install -r requirements.txt
+
+# Install WiFi tools (Linux)
+sudo apt-get install aircrack-ng  # Ubuntu/Debian
+sudo dnf install aircrack-ng       # Fedora
+brew install aircrack-ng           # macOS
 ```
 
----
+## 🚀 Features
 
-## ⚡ Quick Start
+### Network Scanning
+✅ **Device Discovery**
+- ICMP ping sweep
+- ARP scanning
+- Hostname resolution
+- MAC address detection
 
+✅ **Port Scanning**
+- TCP port scanning (1-65535)
+- UDP port detection
+- Banner grabbing
+- Service version detection
+
+✅ **Advanced Analysis**
+- Service fingerprinting (20+ services)
+- OS fingerprinting (TTL-based)
+- Vulnerability detection
+- Real-time statistics
+
+### GUI Interface
+✅ **User-Friendly Dashboard**
+- Real-time scan progress
+- Live results table
+- Statistics visualization
+- Comprehensive logging
+- Multi-format export
+
+### WiFi Security Testing
+⚠️ **Deauthentication (Requires aircrack-ng)**
+- Device deauthentication
+- Broadcast deauth attacks
+- Monitor mode control
+- Network scanning
+- Channel jamming analysis
+
+⚠️ **Advanced Features**
+- Rogue AP creation
+- Traffic analysis
+- Network interruption testing
+
+## 📊 CLI Usage
+
+### Basic Commands
 ```bash
-# Scan a network subnet
+# Default scan (ports 1-1024)
 python main.py 192.168.1.0/24
 
-# Output will show discovered hosts and open ports
+# Specific ports
+python main.py 192.168.1.0/24 --ports 22,80,443
+python main.py 192.168.1.0/24 --ports 1-5000
+
+# With threading
+python main.py 192.168.1.0/24 --threads 20
+
+# With services and OS detection
+python main.py 192.168.1.0/24 --service-detection --os-detection
+
+# Aggressive scan (all features)
+python main.py 192.168.1.0/24 --aggressive
+
+# Verbose output
+python main.py 192.168.1.0/24 -vv
+
+# Custom timeout
+python main.py 192.168.1.0/24 --timeout 10
 ```
 
----
-
-## 📖 Usage
-
-### Basic Scanning
-
+### Output Options
 ```bash
-python main.py 192.168.1.0/24
-```
-
-### Advanced Options
-
-```bash
-# Scan specific ports only
-python main.py 192.168.1.0/24 --ports 22,80,443,8080
-
-# Save results to JSON file
+# JSON export (default)
 python main.py 192.168.1.0/24 --output results.json
 
-# Enable verbose output for detailed logs
-python main.py 192.168.1.0/24 --verbose
+# CSV export
+python main.py 192.168.1.0/24 --output results.csv --format csv
 
-# Combine multiple options
-python main.py 192.168.1.0/24 --ports 22,80,443 --output scan_results.json --verbose
+# XML export
+python main.py 192.168.1.0/24 --output results.xml --format xml
 
-# Specify custom port range
-python main.py 192.168.1.0/24 --ports 1:65535
+# Text export
+python main.py 192.168.1.0/24 --output results.txt --format txt
 ```
 
-### Command-Line Arguments
+## 🖥️ GUI Features
 
-| Argument | Short | Description | Default |
-|----------|-------|-------------|---------|
-| `--ports` | `-p` | Comma-separated ports or range (e.g., 22,80,443 or 1:1024) | 1-1024 |
-| `--output` | `-o` | Output file path (JSON format) | stdout |
-| `--verbose` | `-v` | Enable verbose logging | False |
-| `--timeout` | `-t` | Connection timeout in seconds | 5 |
-| `--threads` | `-T` | Number of scanning threads | 4 |
+### Scan Configuration
+- Network target (CIDR notation)
+- Custom port ranges
+- Thread count (1-64)
+- Connection timeout
+- Toggle ping sweep
+- Toggle service detection
+- Toggle OS fingerprinting
+- Aggressive mode
 
----
+### Results Viewing
+- Real-time results table
+- IP address, status, ports, services, OS
+- Statistics dashboard
+- Live logging output
+- Export to multiple formats
 
-## 🏗️ Architecture
+## ⚠️ WiFi Deauthentication (Advanced)
 
-```
-ShibaCuddles/
-├── README.md                 # Documentation
-├── requirements.txt          # Python dependencies
-├── main.py                   # Application entry point
-├── src/
-│   ├── __init__.py          # Package initialization
-│   ├── device.py            # Device discovery module
-│   ├── portscan.py          # Port scanning module
-│   └── utils.py             # Utility functions
-├── tests/
-│   ├── __init__.py
-│   ├── test_device.py       # Device discovery tests
-│   └── test_portscan.py     # Port scanning tests
-└── .gitignore               # Git ignore file
-```
+### Legal Warning
+**Unauthorized wireless network interference is illegal in most jurisdictions.**
 
-### Module Descriptions
+Only use this feature for:
+- Testing your own networks
+- Authorized penetration testing
+- Educational purposes
 
-- **device.py** - Handles ICMP-based device discovery on network subnets
-- **portscan.py** - Implements TCP port scanning functionality
-- **utils.py** - Common utilities including IP handling and result formatting
-- **main.py** - CLI interface and orchestration logic
-
----
-
-## ⚙️ Configuration
-
-Configuration can be done via command-line arguments. For advanced configurations, edit the default settings in `src/utils.py`:
-
+### Usage
 ```python
-DEFAULT_PORT_RANGE = (1, 1024)
-DEFAULT_TIMEOUT = 5
-DEFAULT_THREADS = 4
+from src.deauth import WiFiDeauthenticator
+
+deauth = WiFiDeauthenticator()
+
+# Enable monitor mode
+deauth.enable_monitor_mode('wlan0')
+
+# Deauth specific device
+target = DeauthTarget(
+    mac_address='AA:BB:CC:DD:EE:FF',
+    gateway_mac='11:22:33:44:55:66',
+    ssid='TestNetwork',
+    channel=6,
+    interface='wlan0mon'
+)
+deauth.deauthenticate_device(target)
+
+# Disable monitor mode
+deauth.disable_monitor_mode('wlan0mon')
 ```
 
----
+## 🔍 Example Scans
 
-## 🧪 Testing
-
-Run the test suite to ensure everything is working correctly:
-
+### Small Office Network
 ```bash
-# Run all tests
-python -m pytest tests/
-
-# Run specific test file
-python -m pytest tests/test_device.py
-
-# Run with verbose output
-python -m pytest tests/ -v
-
-# Run with coverage report
-python -m pytest tests/ --cov=src
+python main.py 10.0.0.0/24 --threads 15 --ports 22,80,443,3306,5432
 ```
 
----
+### Home Network Security Audit
+```bash
+python main.py 192.168.0.0/24 --aggressive --service-detection --os-detection
+```
+
+### Enterprise Network Assessment
+```bash
+python main.py 172.16.0.0/16 --threads 32 --ports 1-10000 --aggressive -vv
+```
+
+## 📊 Understanding Results
+
+### JSON Output Format
+```json
+[
+  {
+    "ip": "192.168.1.1",
+    "alive": true,
+    "open_ports": [22, 80, 443],
+    "services": {
+      "22": {"name": "SSH", "version": "OpenSSH 8.2"},
+      "80": {"name": "HTTP", "version": "Apache 2.4.29"}
+    },
+    "os_info": {"name": "Linux/Unix", "ttl": 64, "confidence": 95},
+    "scan_time": 2.34
+  }
+]
+```
+
+## 🛠️ Troubleshooting
+
+### Issue: Permission Denied (WiFi Features)
+**Solution:**
+```bash
+sudo chmod +u+s /usr/bin/airmon-ng
+sudo chmod +u+s /usr/bin/aireplay-ng
+```
+
+### Issue: PyQt6 Not Found
+**Solution:**
+```bash
+pip install PyQt6 PyQt6-Charts
+```
+
+### Issue: Scan Timeout
+**Solution:** Increase timeout value
+```bash
+python main.py 192.168.1.0/24 --timeout 15
+```
+
+### Issue: High False Negatives
+**Solution:** Disable ping sweep
+```bash
+python main.py 192.168.1.0/24 --no-ping
+```
+
+## 📈 Performance Tips
+
+1. **Threading**: Use more threads for larger networks
+   ```bash
+   python main.py 10.0.0.0/16 --threads 64
+   ```
+
+2. **Port Range**: Scan common ports first
+   ```bash
+   python main.py 192.168.1.0/24 --ports 22,80,443,3306,5432,8080
+   ```
+
+3. **Rate Limiting**: Reduce network load
+   ```bash
+   python main.py 192.168.1.0/24 --rate-limit 0.1
+   ```
+
+4. **Timeout**: Adjust based on network conditions
+   ```bash
+   python main.py 192.168.1.0/24 --timeout 3
+   ```
+
+## 🔐 Security Considerations
+
+- Always get written permission before scanning networks
+- Comply with local laws and regulations
+- Don't use deauth features on networks you don't own
+- Be mindful of DoS-like behavior
+- Respect network resources
+
+## 📝 Configuration File
+
+Create `config.yaml` for default settings:
+```yaml
+scanning:
+  threads: 20
+  timeout: 5.0
+  rate_limit: 0.0
+  batch_size: 50
+
+features:
+  ping_sweep: true
+  service_detection: false
+  os_detection: false
+  aggressive: false
+
+output:
+  format: json
+  export_path: ./results/
+```
 
 ## 🤝 Contributing
 
-We welcome contributions! Here's how you can help:
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-1. **Fork the repository** on GitHub
-2. **Create a feature branch** for your changes
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-3. **Write tests** for new functionality
-4. **Commit your changes** with descriptive messages
-   ```bash
-   git commit -m "Add feature: description of changes"
-   ```
-5. **Push to your fork** and submit a **pull request**
+## 📄 License
 
-### Contribution Guidelines
+MIT License - See [LICENSE](LICENSE) file for details.
 
-- Follow PEP 8 style guidelines
-- Write clear, descriptive commit messages
-- Include unit tests for new features
-- Update documentation as needed
-- Ensure all tests pass before submitting PR
+## ⚠️ Disclaimer
+
+**ShibaCuddles is provided as-is for educational and authorized security testing purposes only.**
+
+Unauthorized access to computer systems is illegal. Users are responsible for ensuring they have proper authorization before using this tool on any network or system.
+
+## 🐕 About
+
+ShibaCuddles - "Because every network needs a cuddly scanner!"
+
+Built for security professionals and network administrators to perform efficient, comprehensive network assessments.
 
 ---
 
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 👥 Authors & Contributors
-
-- **Lead Developer**: [thedarkonejesus](https://github.com/thedarkonejesus)
-- **Contributors**: [View all contributors](https://github.com/thedarkonejesus/ShibaCuddles/graphs/contributors)
-
----
-
-## 🐕 About the Name
-
-*ShibaCuddles* combines the charm of Shiba Inu dogs with the friendly nature of this network scanning tool. Because every network deserves a cuddly, reliable scanner!
-
----
-
-## ❓ FAQ
-
-**Q: Is this tool for ethical purposes only?**  
-A: Yes, this tool is designed for legitimate network administration and testing on networks you own or have permission to scan.
-
-**Q: Can I scan the entire internet?**  
-A: No, and you shouldn't. This tool is designed for local network scanning. Always get proper authorization before scanning any network.
-
-**Q: How fast is the scanning?**  
-A: Scanning speed depends on your network, the number of hosts, and thread count. Typical local subnets scan in seconds to minutes.
-
----
-
-## 📞 Support
-
-For issues, questions, or suggestions:
-- Open an [issue](https://github.com/thedarkonejesus/ShibaCuddles/issues) on GitHub
-- Check [existing issues](https://github.com/thedarkonejesus/ShibaCuddles/issues?q=is%3Aissue) for similar topics
-
----
-
-**Last Updated**: June 2026  
-**Status**: Active Development
+For more information, visit: https://github.com/thedarkonejesus/ShibaCuddles
